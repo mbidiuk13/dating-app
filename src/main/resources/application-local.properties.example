@@ -1,0 +1,4 @@
+# Скопіюйте цей файл як application-local.properties (у цю ж папку)
+# і вкажіть свій пароль користувача postgres, заданий під час встановлення PostgreSQL.
+# Файл application-local.properties у Git не потрапляє.
+spring.datasource.password=ВАШ_ПАРОЛЬ

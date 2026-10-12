@@ -1,0 +1,18 @@
+# Результати збірки
+target/
+out/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Локальні налаштування з паролями
+src/main/resources/application-local.properties
+.env
+
+# Системні та тимчасові файли
+*.log
+.DS_Store
+Thumbs.db
+HELP.md
