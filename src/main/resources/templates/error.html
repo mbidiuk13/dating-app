@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Помилка')}"></head>
+<body>
+<main class="container narrow">
+    <h1 th:text="${status == 404 ? 'Сторінку не знайдено' : 'Щось пішло не так'}">Помилка</h1>
+    <p th:if="${status == 404}">Можливо, анкету ще не створено або посилання застаріло.</p>
+    <p th:unless="${status == 404}">Спробуйте ще раз трохи пізніше. Код помилки: <span th:text="${status}">500</span></p>
+    <p><a th:href="@{/profile}">На головну</a></p>
+</main>
+</body>
+</html>
