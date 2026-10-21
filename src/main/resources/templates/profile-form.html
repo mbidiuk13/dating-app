@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Моя анкета')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="container">
+    <h1>Моя анкета</h1>
+
+    <form th:action="@{/profile/edit}" th:object="${form}" method="post" class="form">
+        <section class="card">
+            <h2>Відкрита інформація</h2>
+            <p class="hint">Бачать усі авторизовані користувачі, зокрема в результатах пошуку.</p>
+
+            <label>Ім'я
+                <input type="text" th:field="*{firstName}" maxlength="50">
+                <span class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></span>
+            </label>
+            <label>Про себе
+                <textarea th:field="*{openDescription}" rows="5"></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('openDescription')}" th:errors="*{openDescription}"></span>
+            </label>
+            <label>Фото (посилання, по одному в рядку)
+                <textarea th:field="*{openPhotos}" rows="3" placeholder="https://..."></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('openPhotos')}" th:errors="*{openPhotos}"></span>
+            </label>
+            <label>Ключові слова (інтереси через кому)
+                <input type="text" th:field="*{keywords}" placeholder="музика, подорожі, кава">
+                <span class="field-error" th:if="${#fields.hasErrors('keywords')}" th:errors="*{keywords}"></span>
+            </label>
+        </section>
+
+        <section class="card private">
+            <h2>Закрита інформація</h2>
+            <p class="hint">Відкривається лише людині, з якою ви взаємно підтвердили запрошення.</p>
+
+            <label>Контакти
+                <textarea th:field="*{closedContactInfo}" rows="2" placeholder="Телефон, Telegram, Instagram"></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('closedContactInfo')}" th:errors="*{closedContactInfo}"></span>
+            </label>
+            <label>Особисті деталі
+                <textarea th:field="*{closedPrivateDetails}" rows="4"></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('closedPrivateDetails')}" th:errors="*{closedPrivateDetails}"></span>
+            </label>
+        </section>
+
+        <button type="submit">Зберегти анкету</button>
+    </form>
+</main>
+</body>
+</html>

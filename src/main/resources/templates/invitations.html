@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Запрошення')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="container">
+    <h1>Запрошення</h1>
+
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <section class="card">
+        <h2>Отримані</h2>
+        <p th:if="${received.isEmpty()}">Отриманих запрошень поки немає.</p>
+        <table th:unless="${received.isEmpty()}">
+            <thead>
+            <tr><th>Від кого</th><th>Дата</th><th>Стан</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="inv : ${received}">
+                <td><a th:href="@{/users/{id}/profile(id=${inv.counterpartUserId()})}"
+                       th:text="${names.getOrDefault(inv.counterpartUserId(), 'Користувач #' + inv.counterpartUserId())}">Ім'я</a></td>
+                <td th:text="${#temporals.format(inv.sentAt(), 'dd.MM.yyyy HH:mm')}">01.01.2026</td>
+                <td><span class="status" th:text="${inv.status()}">PENDING</span></td>
+                <td>
+                    <th:block th:if="${inv.isPending()}">
+                        <form th:action="@{/api/invitations/{id}/accept(id=${inv.id()})}" method="post" class="inline">
+                            <button type="submit">Підтвердити</button>
+                        </form>
+                        <form th:action="@{/api/invitations/{id}/reject(id=${inv.id()})}" method="post" class="inline">
+                            <button type="submit" class="secondary">Відхилити</button>
+                        </form>
+                    </th:block>
+                    <span th:if="${inv.isAccepted()}" th:text="${'Сумісність ' + inv.compatibilityPercentage() + ' %'}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h2>Надіслані</h2>
+        <p th:if="${sent.isEmpty()}">Ви ще не надсилали запрошень. Знайдіть анкети через <a th:href="@{/search}">пошук</a>.</p>
+        <table th:unless="${sent.isEmpty()}">
+            <thead>
+            <tr><th>Кому</th><th>Дата</th><th>Стан</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="inv : ${sent}">
+                <td><a th:href="@{/users/{id}/profile(id=${inv.counterpartUserId()})}"
+                       th:text="${names.getOrDefault(inv.counterpartUserId(), 'Користувач #' + inv.counterpartUserId())}">Ім'я</a></td>
+                <td th:text="${#temporals.format(inv.sentAt(), 'dd.MM.yyyy HH:mm')}">01.01.2026</td>
+                <td><span class="status" th:text="${inv.status()}">PENDING</span></td>
+                <td>
+                    <form th:if="${inv.isPending()}" th:action="@{/api/invitations/{id}/cancel(id=${inv.id()})}"
+                          method="post" class="inline">
+                        <button type="submit" class="secondary">Скасувати</button>
+                    </form>
+                    <span th:if="${inv.isAccepted()}" th:text="${'Сумісність ' + inv.compatibilityPercentage() + ' %'}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

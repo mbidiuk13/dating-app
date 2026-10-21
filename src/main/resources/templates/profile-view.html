@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Анкета')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="container" th:with="p=${view.publicInfo()}, inv=${view.invitation()}">
+
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <h1>
+        <span th:if="${view.ownProfile()}" th:text="${p.firstName() + ' (моя анкета)'}">Моя анкета</span>
+        <span th:unless="${view.ownProfile()}" th:text="${p.firstName()}">Ім'я</span>
+        <small th:text="${p.age() + ' р.'}">25 р.</small>
+    </h1>
+
+    <p class="alert success" th:if="${view.ownProfile() and p.openDescription() == null}">
+        Анкету створено. Заповніть інформацію про себе, щоб інші могли знайти вас у пошуку.
+    </p>
+
+    <section class="card">
+        <h2>Відкрита інформація</h2>
+        <p class="description" th:text="${p.openDescription()}">Опис</p>
+        <div class="photos" th:unless="${p.photoUrls().isEmpty()}">
+            <img th:each="url : ${p.photoUrls()}" th:src="${url}" alt="Фото">
+        </div>
+        <p class="tags">
+            <span class="tag" th:each="tag : ${p.keywords()}" th:text="${tag}">тег</span>
+        </p>
+    </section>
+
+    <section class="card private" th:if="${view.hasPrivateAccess()}">
+        <h2>Закрита інформація</h2>
+        <p><strong>Контакти:</strong> <span th:text="${view.privateInfo().closedContactInfo() ?: '—'}"></span></p>
+        <p><strong>Особисті деталі:</strong> <span th:text="${view.privateInfo().closedPrivateDetails() ?: '—'}"></span></p>
+    </section>
+
+    <section class="card locked" th:unless="${view.hasPrivateAccess()}">
+        <h2>Закрита інформація</h2>
+        <p>Стане доступною, коли ви обоє підтвердите запрошення.</p>
+    </section>
+
+    <!-- Власна анкета -->
+    <p th:if="${view.ownProfile()}">
+        <a class="button" th:href="@{/profile/edit}">Редагувати анкету</a>
+    </p>
+
+    <!-- Чужа анкета: дії із запрошенням залежно від його стану -->
+    <section class="card" th:unless="${view.ownProfile()}">
+        <h2>Запрошення</h2>
+
+        <form th:if="${inv == null or inv.isClosed()}" th:action="@{/api/invitations/send}" method="post">
+            <input type="hidden" name="receiverId" th:value="${p.ownerId()}">
+            <p th:if="${inv != null}" class="hint">Попереднє запрошення було відхилено або скасовано.</p>
+            <button type="submit">Надіслати запрошення</button>
+        </form>
+
+        <div th:if="${inv != null and inv.isPending() and inv.incoming()}">
+            <p>Цей користувач надіслав вам запрошення.</p>
+            <form th:action="@{/api/invitations/{id}/accept(id=${inv.id()})}" method="post" class="inline">
+                <button type="submit">Підтвердити</button>
+            </form>
+            <form th:action="@{/api/invitations/{id}/reject(id=${inv.id()})}" method="post" class="inline">
+                <button type="submit" class="secondary">Відхилити</button>
+            </form>
+        </div>
+
+        <div th:if="${inv != null and inv.isPending() and !inv.incoming()}">
+            <p>Запрошення надіслано, очікує відповіді.</p>
+            <form th:action="@{/api/invitations/{id}/cancel(id=${inv.id()})}" method="post" class="inline">
+                <button type="submit" class="secondary">Скасувати запрошення</button>
+            </form>
+        </div>
+
+        <div th:if="${inv != null and inv.isAccepted()}" class="compatibility">
+            <p class="percentage" th:text="${inv.compatibilityPercentage() + ' %'}">85 %</p>
+            <p>Сумісність за матрицею долі</p>
+            <p th:text="${inv.compatibilityDescription()}">Опис сумісності</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>

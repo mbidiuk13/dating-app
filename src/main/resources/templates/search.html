@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Пошук')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="container">
+    <h1>Пошук анкет</h1>
+
+    <form th:action="@{/search}" method="get" class="search">
+        <input type="text" name="q" th:value="${query}" placeholder="Ключові слова: музика, кава, подорожі" autofocus>
+        <button type="submit">Шукати</button>
+    </form>
+
+    <p th:if="${searched and results.isEmpty()}">Анкет за цими ключовими словами не знайдено.</p>
+
+    <article class="card result" th:each="r : ${results}">
+        <h2>
+            <a th:href="@{/users/{id}/profile(id=${r.ownerId()})}" th:text="${r.firstName()}">Ім'я</a>
+            <small th:text="${r.age() + ' р.'}">25 р.</small>
+        </h2>
+        <p th:text="${r.openDescription()}">Опис</p>
+        <p class="tags">
+            <span class="tag" th:each="tag : ${r.keywords()}" th:text="${tag}">тег</span>
+        </p>
+    </article>
+</main>
+</body>
+</html>
