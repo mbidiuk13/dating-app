@@ -45,4 +45,8 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     List<Invitation> findBySenderIdOrderBySentAtDesc(Long senderId);
 
     List<Invitation> findByReceiverIdOrderBySentAtDesc(Long receiverId);
+
+    /** Усі запрошення, де користувач — відправник або отримувач (для видалення облікового запису). */
+    @Query("select i from Invitation i where i.sender.id = :userId or i.receiver.id = :userId")
+    List<Invitation> findAllInvolving(@Param("userId") Long userId);
 }
