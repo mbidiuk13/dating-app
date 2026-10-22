@@ -7,9 +7,13 @@ build/
 .idea/
 *.iml
 
-# Локальні налаштування з паролями
+# Локальні налаштування з паролями та сертифікат HTTPS (у кожного свій)
 src/main/resources/application-local.properties
+src/main/resources/keystore.p12
 .env
+
+# Журнали застосунку
+logs/
 
 # Системні та тимчасові файли
 *.log

@@ -13,12 +13,18 @@
 
     <groupId>ua.kpi</groupId>
     <artifactId>dating-app</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.2.0</version>
     <name>dating-app</name>
     <description>Веб-застосунок для знайомств з розрахунком сумісності за матрицею долі</description>
 
+    <!--
+        Управління залежностями: версії всіх бібліотек (Spring, Hibernate, PostgreSQL-драйвер,
+        H2, JUnit, Mockito) задає батьківський spring-boot-starter-parent 3.5.0, тому вони
+        гарантовано сумісні між собою. Власних номерів версій у залежностях немає навмисно.
+    -->
     <properties>
         <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
@@ -53,6 +59,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Моніторинг доступності: /actuator/health (НФВ надійності) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Тести: JUnit 5, Mockito, AssertJ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -64,6 +76,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Інтеграційні тести: вбудована БД H2 у режимі сумісності з PostgreSQL -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,6 +89,29 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- Перевірка середовища збірки: однакові версії Java та Maven у всіх учасниць -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-environment</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.6.3,)</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

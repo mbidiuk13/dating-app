@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -29,9 +30,11 @@ import java.util.stream.Collectors;
  * Створюється разом з користувачем під час реєстрації (композиція User–Profile).
  * Дані фізично розділені на відкриті (open*) та закриті (closed*) поля (US-02).
  * Назовні анкета віддається лише через DTO: getPublicInfo() не містить закритих полів.
+ * Власник може додатково перенести фото та вік у закриту частину (photosPrivate, agePrivate).
+ * Індекс за датою народження пришвидшує фільтр пошуку за віком (НФВ продуктивності).
  */
 @Entity
-@Table(name = "profiles")
+@Table(name = "profiles", indexes = @Index(name = "idx_profiles_birth_date", columnList = "birth_date"))
 public class Profile {
 
     @Id
@@ -68,11 +71,22 @@ public class Profile {
     @Column(name = "closed_private_details", length = 2000)
     private String closedPrivateDetails;
 
+    // ---- Налаштування видимості: власник сам вирішує, чи показувати фото й вік усім ----
+
+    /** true — фото бачать лише після взаємного ACCEPTED. */
+    @Column(name = "photos_private", columnDefinition = "boolean default false")
+    private boolean photosPrivate;
+
+    /** true — вік бачать лише після взаємного ACCEPTED; анкета не бере участі у фільтрі за віком. */
+    @Column(name = "age_private", columnDefinition = "boolean default false")
+    private boolean agePrivate;
+
     /** Агрегація: теги — окремий довідник, спільний для багатьох анкет. */
     @ManyToMany
     @JoinTable(name = "profile_keywords",
             joinColumns = @JoinColumn(name = "profile_id"),
-            inverseJoinColumns = @JoinColumn(name = "keyword_id"))
+            inverseJoinColumns = @JoinColumn(name = "keyword_id"),
+            indexes = @Index(name = "idx_profile_keywords_keyword", columnList = "keyword_id"))
     private Set<Keyword> keywords = new HashSet<>();
 
     protected Profile() {
@@ -96,6 +110,12 @@ public class Profile {
         this.closedPrivateDetails = privateDetails;
     }
 
+    /** Самостійне налаштування відкритих/закритих полів (ЛР1, середній пріоритет). */
+    public void updateVisibility(boolean photosPrivate, boolean agePrivate) {
+        this.photosPrivate = photosPrivate;
+        this.agePrivate = agePrivate;
+    }
+
     public void replaceKeywords(Set<Keyword> newKeywords) {
         this.keywords.clear();
         this.keywords.addAll(newKeywords);
@@ -105,29 +125,38 @@ public class Profile {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
-    /** Відкрита частина анкети — без жодного закритого поля. */
+    /**
+     * Відкрита частина анкети — без жодного закритого поля.
+     * Якщо власник приховав фото або вік, вони сюди не потрапляють взагалі.
+     */
     public ProfilePublicDTO getPublicInfo() {
         return new ProfilePublicDTO(
                 user.getId(),
                 firstName,
-                getAge(),
+                agePrivate ? null : getAge(),
                 openDescription,
-                photoUrls(),
+                photosPrivate ? List.of() : photoUrls(),
                 keywordTags());
     }
 
     /**
      * Закрита частина анкети. Право доступу (власник або взаємне ACCEPTED)
      * перевіряє ProfileService до виклику цього методу.
+     * Приховані власником фото та вік передаються лише тут.
      */
     public ProfilePrivateDTO getPrivateInfo() {
-        return new ProfilePrivateDTO(closedContactInfo, closedPrivateDetails);
+        return new ProfilePrivateDTO(
+                closedContactInfo,
+                closedPrivateDetails,
+                photosPrivate ? photoUrls() : List.of(),
+                agePrivate ? getAge() : null);
     }
 
     /** Поля для форми редагування власної анкети. */
     public ProfileData toProfileData() {
         return new ProfileData(firstName, openDescription, openPhotos,
-                closedContactInfo, closedPrivateDetails, keywordTags());
+                closedContactInfo, closedPrivateDetails, keywordTags(),
+                photosPrivate, agePrivate);
     }
 
     private List<String> photoUrls() {
@@ -160,5 +189,13 @@ public class Profile {
 
     public LocalDate getBirthDate() {
         return birthDate;
+    }
+
+    public boolean isPhotosPrivate() {
+        return photosPrivate;
+    }
+
+    public boolean isAgePrivate() {
+        return agePrivate;
     }
 }
