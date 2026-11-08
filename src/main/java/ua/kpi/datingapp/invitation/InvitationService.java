@@ -118,6 +118,15 @@ public class InvitationService {
                 .map(invitation -> InvitationDTO.from(invitation, viewerUserId));
     }
 
+    /**
+     * Видаляє всі запрошення користувача разом з результатами сумісності
+     * (каскад Invitation → DestinyMatrixResult). Викликається під час видалення облікового запису.
+     */
+    @Transactional
+    public void deleteAllInvolving(Long userId) {
+        invitationRepository.deleteAll(invitationRepository.findAllInvolving(userId));
+    }
+
     private void requireReceiver(Invitation invitation, Long currentUserId) {
         if (!invitation.getReceiver().getId().equals(currentUserId)) {
             throw new InvitationException("Відповісти на запрошення може лише його отримувач");

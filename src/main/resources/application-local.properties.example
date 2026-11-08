@@ -1,4 +1,7 @@
-# Скопіюйте цей файл як application-local.properties (у цю ж папку)
-# і вкажіть свій пароль користувача postgres, заданий під час встановлення PostgreSQL.
-# Файл application-local.properties у Git не потрапляє.
+# Скопіюйте цей файл у application-local.properties і вкажіть свій пароль від PostgreSQL.
+# application-local.properties не потрапляє в Git.
 spring.datasource.password=ВАШ_ПАРОЛЬ
+
+# Пароль до файлу сертифіката keystore.p12 (той самий, що в команді keytool).
+# Якщо використовували changeit, рядок можна не змінювати.
+server.ssl.key-store-password=changeit

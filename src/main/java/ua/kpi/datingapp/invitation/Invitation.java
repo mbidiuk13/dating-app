@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -24,7 +25,11 @@ import java.time.LocalDateTime;
  * які перевіряють дозволені переходи.
  */
 @Entity
-@Table(name = "invitations")
+@Table(name = "invitations", indexes = {
+        // НФВ продуктивності: пошук запрошення між двома користувачами та списки «отримані»
+        @Index(name = "idx_invitations_sender_receiver", columnList = "sender_id, receiver_id"),
+        @Index(name = "idx_invitations_receiver", columnList = "receiver_id")
+})
 public class Invitation {
 
     @Id
