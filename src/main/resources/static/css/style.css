@@ -238,3 +238,62 @@ td {
     font-weight: 600;
     color: var(--muted);
 }
+
+/* ---------- ЛР5: фільтри пошуку, перемикачі видимості, видалення анкети ---------- */
+
+select {
+    font: inherit;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.search-form .search {
+    margin-bottom: 12px;
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9rem;
+}
+
+.filters input[type="number"] {
+    width: 90px;
+}
+
+.result-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.form label.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+}
+
+.card.danger {
+    border-color: var(--error);
+}
+
+button.danger {
+    background: var(--error);
+}
+
+button.danger:hover {
+    background: #7f1a15;
+}

@@ -6,22 +6,59 @@
 <main class="container">
     <h1>Пошук анкет</h1>
 
-    <form th:action="@{/search}" method="get" class="search">
-        <input type="text" name="q" th:value="${query}" placeholder="Ключові слова: музика, кава, подорожі" autofocus>
-        <button type="submit">Шукати</button>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <form th:action="@{/search}" method="get" class="card search-form">
+        <div class="search">
+            <input type="text" name="q" th:value="${query}" placeholder="Ключові слова: музика, кава, подорожі" autofocus>
+            <button type="submit">Шукати</button>
+        </div>
+        <div class="filters">
+            <label>Сортування
+                <select name="sort">
+                    <option th:each="s : ${sorts}" th:value="${s.param()}"
+                            th:selected="${s == criteria.sort()}"
+                            th:text="${s.name() == 'RELEVANCE' ? 'Більше спільних інтересів' : (s.name() == 'YOUNGEST' ? 'Спочатку молодші' : 'Спочатку старші')}">
+                        Більше спільних інтересів
+                    </option>
+                </select>
+            </label>
+            <label>Вік від
+                <input type="number" name="minAge" min="18" max="120" th:value="${criteria.minAge()}">
+            </label>
+            <label>до
+                <input type="number" name="maxAge" min="18" max="120" th:value="${criteria.maxAge()}">
+            </label>
+        </div>
+        <p class="hint" th:if="${criteria.hasAgeFilter()}">
+            Анкети, власники яких приховали вік, у пошук з фільтром за віком не потрапляють.
+        </p>
     </form>
 
-    <p th:if="${searched and results.isEmpty()}">Анкет за цими ключовими словами не знайдено.</p>
+    <p th:if="${searched and results.hits().isEmpty()}">Анкет за цими ключовими словами не знайдено.</p>
 
-    <article class="card result" th:each="r : ${results}">
+    <p class="hint" th:if="${results.isLimited()}"
+       th:text="${'Знайдено анкет: ' + results.totalFound() + '. Показано перші ' + results.hits().size() + ' — уточніть запит або фільтр.'}">
+        Знайдено анкет: 120. Показано перші 50.
+    </p>
+
+    <article class="card result" th:each="hit : ${results.hits()}" th:with="r=${hit.profile()}">
         <h2>
             <a th:href="@{/users/{id}/profile(id=${r.ownerId()})}" th:text="${r.firstName()}">Ім'я</a>
-            <small th:text="${r.age() + ' р.'}">25 р.</small>
+            <small th:if="${r.hasAge()}" th:text="${r.age() + ' р.'}">25 р.</small>
         </h2>
         <p th:text="${r.openDescription()}">Опис</p>
         <p class="tags">
             <span class="tag" th:each="tag : ${r.keywords()}" th:text="${tag}">тег</span>
         </p>
+        <div class="result-actions">
+            <span class="hint" th:text="${'Спільних інтересів: ' + hit.sharedKeywords()}">Спільних інтересів: 2</span>
+            <!-- НФВ зручності: запрошення можна надіслати прямо з результатів пошуку -->
+            <form th:action="@{/api/invitations/send}" method="post" class="inline">
+                <input type="hidden" name="receiverId" th:value="${r.ownerId()}">
+                <button type="submit" class="secondary">Надіслати запрошення</button>
+            </form>
+        </div>
     </article>
 </main>
 </body>
