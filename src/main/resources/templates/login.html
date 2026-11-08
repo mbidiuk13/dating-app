@@ -8,6 +8,7 @@
     <div th:replace="~{fragments :: flash}"></div>
     <p class="alert error" th:if="${param.error}">Невірний email або пароль.</p>
     <p class="alert success" th:if="${param.logout}">Ви вийшли із системи.</p>
+    <p class="alert success" th:if="${param.deleted}">Анкету та обліковий запис видалено.</p>
 
     <form th:action="@{/login}" method="post" class="card form">
         <label>Email

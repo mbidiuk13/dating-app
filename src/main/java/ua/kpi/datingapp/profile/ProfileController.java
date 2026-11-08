@@ -1,6 +1,10 @@
 package ua.kpi.datingapp.profile;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -8,12 +12,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ua.kpi.datingapp.user.UserService;
 
 import java.security.Principal;
 
-/** Створення, редагування та перегляд анкет. */
+/** Створення, редагування, перегляд і видалення анкет. */
 @Controller
 public class ProfileController {
 
@@ -54,6 +59,25 @@ public class ProfileController {
         profileService.saveOwnProfile(userId, form.toData());
         redirectAttributes.addFlashAttribute("message", "Анкету збережено");
         return "redirect:/profile";
+    }
+
+    /**
+     * Видалення анкети разом з обліковим записом. Потрібне явне підтвердження
+     * (галочка у формі), після видалення сесія завершується.
+     */
+    @PostMapping("/profile/delete")
+    public String deleteProfile(@RequestParam(name = "confirm", defaultValue = "false") boolean confirm,
+                                Authentication authentication,
+                                HttpServletRequest request,
+                                HttpServletResponse response,
+                                RedirectAttributes redirectAttributes) {
+        if (!confirm) {
+            redirectAttributes.addFlashAttribute("error", "Поставте галочку, щоб підтвердити видалення анкети");
+            return "redirect:/profile/edit";
+        }
+        userService.deleteAccount(userService.getIdByEmail(authentication.getName()));
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
+        return "redirect:/login?deleted";
     }
 
     /** Чужа анкета: закрита частина передається в шаблон лише за наявності доступу. */

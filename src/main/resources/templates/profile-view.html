@@ -10,7 +10,7 @@
     <h1>
         <span th:if="${view.ownProfile()}" th:text="${p.firstName() + ' (моя анкета)'}">Моя анкета</span>
         <span th:unless="${view.ownProfile()}" th:text="${p.firstName()}">Ім'я</span>
-        <small th:text="${p.age() + ' р.'}">25 р.</small>
+        <small th:if="${p.hasAge()}" th:text="${p.age() + ' р.'}">25 р.</small>
     </h1>
 
     <p class="alert success" th:if="${view.ownProfile() and p.openDescription() == null}">
@@ -28,10 +28,17 @@
         </p>
     </section>
 
-    <section class="card private" th:if="${view.hasPrivateAccess()}">
+    <section class="card private" th:if="${view.hasPrivateAccess()}" th:with="c=${view.privateInfo()}">
         <h2>Закрита інформація</h2>
-        <p><strong>Контакти:</strong> <span th:text="${view.privateInfo().closedContactInfo() ?: '—'}"></span></p>
-        <p><strong>Особисті деталі:</strong> <span th:text="${view.privateInfo().closedPrivateDetails() ?: '—'}"></span></p>
+        <p th:if="${c.hiddenAge() != null}"><strong>Вік:</strong> <span th:text="${c.hiddenAge() + ' р.'}">25 р.</span></p>
+        <p><strong>Контакти:</strong> <span th:text="${c.closedContactInfo() ?: '—'}"></span></p>
+        <p><strong>Особисті деталі:</strong> <span th:text="${c.closedPrivateDetails() ?: '—'}"></span></p>
+        <div class="photos" th:unless="${c.hiddenPhotoUrls().isEmpty()}">
+            <img th:each="url : ${c.hiddenPhotoUrls()}" th:src="${url}" alt="Фото">
+        </div>
+        <p class="hint" th:if="${view.ownProfile() and (c.hiddenAge() != null or !c.hiddenPhotoUrls().isEmpty())}">
+            Фото та вік, які ви приховали, інші побачать лише після взаємного підтвердження запрошення.
+        </p>
     </section>
 
     <section class="card locked" th:unless="${view.hasPrivateAccess()}">

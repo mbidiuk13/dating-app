@@ -2,10 +2,24 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="uk">
 <head th:replace="~{fragments :: head('Помилка')}"></head>
 <body>
-<main class="container narrow">
-    <h1 th:text="${status == 404 ? 'Сторінку не знайдено' : 'Щось пішло не так'}">Помилка</h1>
-    <p th:if="${status == 404}">Можливо, анкету ще не створено або посилання застаріло.</p>
-    <p th:unless="${status == 404}">Спробуйте ще раз трохи пізніше. Код помилки: <span th:text="${status}">500</span></p>
+<!--
+    Безпечне повідомлення про помилку (НФВ надійності, ЛР1): лише українською,
+    без технічних подробиць. Stack trace записується тільки в logs/dating-app.log.
+-->
+<main class="container narrow" th:with="code=${status ?: 500}">
+    <h1 th:switch="${code}">
+        <span th:case="400">Некоректний запит</span>
+        <span th:case="403">Доступ заборонено</span>
+        <span th:case="404">Сторінку не знайдено</span>
+        <span th:case="*">Щось пішло не так</span>
+    </h1>
+    <p th:switch="${code}">
+        <span th:case="400">Перевірте адресу або дані форми й спробуйте ще раз.</span>
+        <span th:case="403">У вас немає прав для цієї дії.</span>
+        <span th:case="404">Можливо, анкету видалено або посилання застаріло.</span>
+        <span th:case="*">Спробуйте ще раз трохи пізніше.</span>
+    </p>
+    <p class="hint">Код помилки: <span th:text="${code}">500</span></p>
     <p><a th:href="@{/profile}">На головну</a></p>
 </main>
 </body>

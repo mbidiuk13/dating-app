@@ -26,6 +26,12 @@ public class ProfileForm {
     @Size(max = 2000, message = "Не більше 2000 символів")
     private String closedPrivateDetails;
 
+    /** Перемикач: фото бачать лише після взаємного підтвердження запрошення. */
+    private boolean photosPrivate;
+
+    /** Перемикач: вік бачать лише після взаємного підтвердження запрошення. */
+    private boolean agePrivate;
+
     public static ProfileForm from(ProfileData data) {
         ProfileForm form = new ProfileForm();
         form.firstName = data.firstName();
@@ -34,6 +40,8 @@ public class ProfileForm {
         form.keywords = String.join(", ", data.keywords());
         form.closedContactInfo = data.closedContactInfo();
         form.closedPrivateDetails = data.closedPrivateDetails();
+        form.photosPrivate = data.photosPrivate();
+        form.agePrivate = data.agePrivate();
         return form;
     }
 
@@ -44,7 +52,9 @@ public class ProfileForm {
                 trimToNull(openPhotos),
                 trimToNull(closedContactInfo),
                 trimToNull(closedPrivateDetails),
-                Keyword.parseTags(keywords));
+                Keyword.parseTags(keywords),
+                photosPrivate,
+                agePrivate);
     }
 
     private static String trimToNull(String value) {
@@ -100,5 +110,21 @@ public class ProfileForm {
 
     public void setClosedPrivateDetails(String closedPrivateDetails) {
         this.closedPrivateDetails = closedPrivateDetails;
+    }
+
+    public boolean isPhotosPrivate() {
+        return photosPrivate;
+    }
+
+    public void setPhotosPrivate(boolean photosPrivate) {
+        this.photosPrivate = photosPrivate;
+    }
+
+    public boolean isAgePrivate() {
+        return agePrivate;
+    }
+
+    public void setAgePrivate(boolean agePrivate) {
+        this.agePrivate = agePrivate;
     }
 }
