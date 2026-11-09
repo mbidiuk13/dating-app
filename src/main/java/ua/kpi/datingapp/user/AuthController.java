@@ -40,6 +40,9 @@ public class AuthController {
         if (form.getBirthDate() != null && !form.isAdult()) {
             bindingResult.rejectValue("birthDate", "underage", "Реєстрація доступна з 18 років");
         }
+        if (form.getBirthDate() != null && !form.hasRealisticBirthDate()) {
+            bindingResult.rejectValue("birthDate", "unrealistic", "Перевірте дату народження");
+        }
         if (bindingResult.hasErrors()) {
             return "register";
         }

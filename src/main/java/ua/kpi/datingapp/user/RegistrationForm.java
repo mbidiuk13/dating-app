@@ -12,8 +12,15 @@ import java.time.LocalDate;
 /** Дані форми реєстрації (US-01) з валідацією полів. */
 public class RegistrationForm {
 
+    /** Максимальна довжина адреси за RFC 5321; стовпець users.email вміщує 255 символів. */
+    public static final int MAX_EMAIL_LENGTH = 254;
+
+    /** Найбільший вік, який бере участь у пошуку (див. SearchCriteria.MAX_ALLOWED_AGE). */
+    public static final int MAX_AGE = 120;
+
     @NotBlank(message = "Вкажіть email")
     @Email(message = "Некоректний email")
+    @Size(max = MAX_EMAIL_LENGTH, message = "Email має бути не довшим за 254 символи")
     private String email;
 
     @NotBlank(message = "Вкажіть пароль")
@@ -38,6 +45,15 @@ public class RegistrationForm {
 
     public boolean isAdult() {
         return birthDate != null && !birthDate.isAfter(LocalDate.now().minusYears(18));
+    }
+
+    /**
+     * Вік не більший за 120 років — так само, як у фільтрі пошуку. Старші дати майже напевно
+     * є помилкою введення; анкета з датою до 1900 року ще й не потрапляла б у результати пошуку
+     * (ЛР6, дефект, знайдений тестуванням граничних значень).
+     */
+    public boolean hasRealisticBirthDate() {
+        return birthDate != null && birthDate.isAfter(LocalDate.now().minusYears(MAX_AGE + 1L));
     }
 
     public String getEmail() {
