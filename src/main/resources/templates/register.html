@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:replace="~{fragments :: head('Реєстрація')}"></head>
+<body>
+<main class="container narrow">
+    <h1>Реєстрація</h1>
+
+    <form th:action="@{/register}" th:object="${form}" method="post" class="card form" novalidate>
+        <label>Email
+            <input type="email" th:field="*{email}" required>
+            <span class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+        </label>
+        <label>Пароль (щонайменше 8 символів)
+            <input type="password" th:field="*{password}" required>
+            <span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+        </label>
+        <label>Повторіть пароль
+            <input type="password" th:field="*{confirmPassword}" required>
+            <span class="field-error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></span>
+        </label>
+        <label>Ім'я
+            <input type="text" th:field="*{firstName}" maxlength="50" required>
+            <span class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></span>
+        </label>
+        <label>Дата народження
+            <input type="date" th:field="*{birthDate}" required>
+            <span class="hint">Потрібна для розрахунку сумісності за матрицею долі. Іншим користувачам показується лише вік.</span>
+            <span class="field-error" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></span>
+        </label>
+        <button type="submit">Зареєструватися</button>
+    </form>
+
+    <p>Уже маєте обліковий запис? <a th:href="@{/login}">Увійти</a></p>
+</main>
+</body>
+</html>
