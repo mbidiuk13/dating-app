@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title + ' · Dating App'}">Dating App</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:fragment="nav" class="topbar">
+    <a class="brand" th:href="@{/profile}">Dating App</a>
+    <nav>
+        <a th:href="@{/profile}">Моя анкета</a>
+        <a th:href="@{/search}">Пошук</a>
+        <a th:href="@{/invitations}">Запрошення</a>
+        <form th:action="@{/logout}" method="post" class="inline">
+            <button type="submit" class="link">Вийти</button>
+        </form>
+    </nav>
+</header>
+
+<div th:fragment="flash">
+    <p class="alert success" th:if="${message}" th:text="${message}">Повідомлення</p>
+    <p class="alert error" th:if="${error}" th:text="${error}">Помилка</p>
+</div>
+
+</body>
+</html>
