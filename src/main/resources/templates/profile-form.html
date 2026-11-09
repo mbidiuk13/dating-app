@@ -6,6 +6,8 @@
 <main class="container">
     <h1>Моя анкета</h1>
 
+    <div th:replace="~{fragments :: flash}"></div>
+
     <form th:action="@{/profile/edit}" th:object="${form}" method="post" class="form">
         <section class="card">
             <h2>Відкрита інформація</h2>
@@ -29,6 +31,20 @@
             </label>
         </section>
 
+        <section class="card">
+            <h2>Що показувати лише після підтвердження</h2>
+            <p class="hint">Позначені дані переходять у закриту частину анкети: їх побачить лише людина,
+                з якою ви взаємно підтвердили запрошення.</p>
+            <label class="checkbox">
+                <input type="checkbox" th:field="*{photosPrivate}">
+                Фото
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" th:field="*{agePrivate}">
+                Вік (анкета не братиме участі в пошуку з фільтром за віком)
+            </label>
+        </section>
+
         <section class="card private">
             <h2>Закрита інформація</h2>
             <p class="hint">Відкривається лише людині, з якою ви взаємно підтвердили запрошення.</p>
@@ -45,6 +61,18 @@
 
         <button type="submit">Зберегти анкету</button>
     </form>
+
+    <section class="card danger">
+        <h2>Видалення анкети</h2>
+        <p>Анкета, обліковий запис і всі ваші запрошення будуть видалені назавжди. Відновити їх не вийде.</p>
+        <form th:action="@{/profile/delete}" method="post" class="form">
+            <label class="checkbox">
+                <input type="checkbox" name="confirm" value="true" required>
+                Так, я хочу видалити анкету
+            </label>
+            <button type="submit" class="danger">Видалити анкету</button>
+        </form>
+    </section>
 </main>
 </body>
 </html>
