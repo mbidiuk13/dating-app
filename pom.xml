@@ -13,7 +13,7 @@
 
     <groupId>ua.kpi</groupId>
     <artifactId>dating-app</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <name>dating-app</name>
     <description>Веб-застосунок для знайомств з розрахунком сумісності за матрицею долі</description>
 
@@ -21,6 +21,7 @@
         Управління залежностями: версії всіх бібліотек (Spring, Hibernate, PostgreSQL-драйвер,
         H2, JUnit, Mockito) задає батьківський spring-boot-starter-parent 3.5.0, тому вони
         гарантовано сумісні між собою. Власних номерів версій у залежностях немає навмисно.
+        Єдиний виняток — плагін JaCoCo: Spring Boot не керує його версією, тому вона вказана явно.
     -->
     <properties>
         <java.version>21</java.version>
@@ -108,6 +109,53 @@
                                 <requireMavenVersion>
                                     <version>[3.6.3,)</version>
                                 </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+                Тестове покриття (ЛР6): JaCoCo збирає дані під час тестів.
+                mvn test   → звіт target/site/jacoco/index.html
+                mvn verify → ще й перевірка: покрито тестами щонайменше 70 % рядків коду,
+                             інакше збірка завершується помилкою
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
                             </rules>
                         </configuration>
                     </execution>
