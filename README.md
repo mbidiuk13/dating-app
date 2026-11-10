@@ -17,7 +17,7 @@
 | Business Layer | Spring Boot 3.5, Java 21 |
 | Persistence Layer | Spring Data JPA (Hibernate 6.6), PostgreSQL 18 |
 | Моніторинг і журнали | Spring Boot Actuator, Logback, журнал доступу Tomcat |
-| Тести | JUnit 5, Mockito, AssertJ, Spring MockMvc, H2 |
+| Тести | JUnit 5, Mockito, AssertJ, Spring MockMvc, H2, Selenium WebDriver (HtmlUnit / Chrome), JaCoCo |
 
 ## Структура проєкту
 
@@ -46,8 +46,11 @@ dating-app/
 │   │       └── logback-spring.xml           налаштування журналів
 │   └── test/
 │       ├── java/ua/kpi/datingapp/
-│       │   ├── compatibility/, invitation/, profile/   модульні тести
+│       │   ├── audit/, compatibility/, config/,
+│       │   │   invitation/, profile/, user/  юніт-тести модулів (моки замість БД)
+│       │   ├── component/                   компонентні тести: репозиторії + БД, контролери + Security
 │       │   ├── integration/                 інтеграційні тести всіх шарів разом
+│       │   ├── system/                      системні тести в браузері (Selenium WebDriver)
 │       │   ├── nfr/                         перевірки нефункціональних вимог
 │       │   └── performance/                 навантажувальний тест LoadTestRunner
 │       └── resources/application-test.properties   БД H2 для тестів
@@ -117,7 +120,7 @@ dating-app/
 | Безпека | закрита інформація не передається на клієнт без взаємної згоди | `ProfileView` отримує `privateInfo = null`; приховані фото й вік не потрапляють у `ProfilePublicDTO` | `publicPartOfProfileNeverContainsClosedData`, інтеграційні тести перевіряють HTML |
 | Безпека | журналювання дій доступу | `logs/audit.log` (входи, перегляди анкет, видалення), `logs/access.*.log` (усі HTTP-запити) | перегляд файлів журналу після запуску |
 | Безпека | захист з'єднання HTTPS | порт 8443 по HTTPS, порт 8080 перенаправляє на HTTPS; cookie сесії `Secure` і `HttpOnly` | відкрити http://localhost:8080 — браузер переходить на https://localhost:8443 |
-| Зручність | основні дії не більше ніж за 3 переходи | пошук: «Пошук» → «Шукати» (2); запрошення: «Пошук» → «Шукати» → «Надіслати запрошення» прямо в результатах (3); підтвердження: «Запрошення» → «Підтвердити» (2) | ручна перевірка |
+| Зручність | основні дії не більше ніж за 3 переходи | пошук: «Пошук» → «Шукати» (2); запрошення: «Пошук» → «Шукати» → «Надіслати запрошення» прямо в результатах (3); підтвердження: «Запрошення» → «Підтвердити» (2) | `UsabilityAndPerformanceSystemTest` рахує переходи в браузері |
 | Зручність | сумісність відсотком і коротким текстом | `ArcanaDestinyMatrixService.describe` | `compatibilityIsShownAsPercentAndShortPlainText` |
 
 ## Інтеграція компонентів
@@ -150,9 +153,10 @@ dating-app/
 
 - Усі залежності описано в `pom.xml`. Їхні версії задає батьківський `spring-boot-starter-parent 3.5.0`,
   тому Spring, Hibernate, драйвер PostgreSQL, H2, JUnit і Mockito гарантовано сумісні між собою.
-  Власних номерів версій у залежностях немає навмисно.
-- Тестові бібліотеки (`spring-boot-starter-test`, `spring-security-test`, `h2`) підключено зі `scope test`:
-  у робочий застосунок вони не потрапляють.
+  Власних номерів версій у залежностях немає навмисно. Єдиний виняток — плагін `jacoco-maven-plugin`
+  (тестове покриття): Spring Boot не керує його версією, тому вона вказана явно.
+- Тестові бібліотеки (`spring-boot-starter-test`, `spring-security-test`, `h2`, Selenium `htmlunit3-driver`,
+  `selenium-support`, `selenium-chrome-driver`) підключено зі `scope test`: у робочий застосунок вони не потрапляють.
 - `maven-enforcer-plugin` перевіряє, що збірка йде на Java 21+ і Maven 3.6.3+, тож середовище
   в обох учасниць однакове.
 - Дерево залежностей: IntelliJ → праворуч вкладка **Maven** → **Dependencies**.
@@ -193,7 +197,8 @@ Run → Edit Configurations → Environment variables → `SSL_ENABLED=false`, �
 ### Тести
 
 У IntelliJ: правою кнопкою на папці `src/test/java` → **Run 'All Tests'**.
-Тести не потребують PostgreSQL: модульні працюють з моками, інтеграційні — з вбудованою БД H2.
+Тести не потребують PostgreSQL: юніт-тести працюють з моками, решта — з вбудованою БД H2.
+Докладно — у розділі [Тестування та валідація](#тестування-та-валідація-лр6).
 
 ### Навантажувальне тестування
 
@@ -215,12 +220,95 @@ Run → Edit Configurations → Environment variables → `SSL_ENABLED=false`, �
 
 Папка `logs/` у Git не потрапляє.
 
+## Тестування та валідація (ЛР6)
+
+### Рівні тестування
+
+| Рівень | Що перевіряється | Інструменти | Тестові класи |
+| --- | --- | --- | --- |
+| Юніт-тести | окремі класи без БД і вебсервера: логіка анкет, пошуку, реєстрації, запрошень, матриці долі, журналу аудиту, обробки помилок | JUnit 5, Mockito, AssertJ, Bean Validation | `profile/*Test`, `user/*Test`, `invitation/*Test`, `compatibility/*Test`, `audit/*Test`, `config/*Test`, `nfr/*Test` |
+| Компонентні тести | взаємодія кількох частин: JPQL-запити репозиторіїв на БД H2; контролери разом зі Spring Security і Thymeleaf-шаблонами; граничні значення реєстрації | `@DataJpaTest`, `@WebMvcTest`, MockMvc | `component/*ComponentTest` |
+| Інтеграційні тести | усі шари разом (Security → контролери → сервіси → JPA → БД) за сценаріями US-01…US-05, UC-1 | `@SpringBootTest`, MockMvc, H2 | `integration/*IntegrationTest` |
+| Системні тести | застосунок цілком на справжньому Tomcat; користувачі працюють через браузер: реєстрація, пошук, запрошення, видалення, помилки; кількість переходів і час сторінок | Selenium WebDriver (HtmlUnit або Chrome) | `system/*SystemTest` |
+| Навантажувальне тестування | 10 000 анкет у PostgreSQL, 100 одночасних сеансів | `LoadTestRunner` (java.net.http) | `performance/LoadTestRunner` |
+
+### Як запустити
+
+- **Усі автоматичні тести:** правою кнопкою на `src/test/java` → **Run 'All Tests'**.
+- **Тестове покриття (JaCoCo):** праворуч вкладка **Maven** → `dating-app` → **Lifecycle** → двічі клацнути `verify`.
+  Звіт — `target/site/jacoco/index.html` (відкрити в браузері). Збірка перевіряє, що тестами покрито
+  щонайменше 70 % рядків коду; якщо менше — `verify` завершується помилкою.
+- **Системні тести у справжньому Chrome:** Run → Edit Configurations → конфігурація тесту → VM options:
+  `-Dbrowser=chrome`. За замовчуванням використовується HtmlUnit — браузер без вікна, Chrome не потрібен.
+- **Навантажувальний тест:** див. розділ [Навантажувальне тестування](#навантажувальне-тестування).
+
+### Валідація функціональних вимог
+
+| Вимога (ЛР1) | Юніт / компонентні тести | Системні тести (браузер) | Результат |
+| --- | --- | --- | --- |
+| US-01 Реєстрація та вхід | `UserServiceTest`, `RegistrationFormTest`, `AppUserDetailsServiceTest`, `RegistrationBoundaryComponentTest` | `registrationAndLogin`, `registrationErrorsAreShown` | виконано |
+| Вихід із системи | — | `logoutEndsSession` | виконано |
+| US-02 Відкрита/Закрита інформація | `ProfileTest`, `ProfileServiceTest` | `mainScenarioFromSearchToPrivateData` (закритих даних немає в HTML до підтвердження) | виконано |
+| Налаштування видимості фото й віку | `ProfileTest`, `ProfileFormTest` | `mainScenarioFromSearchToPrivateData` | виконано |
+| Створення й редагування анкети | `ProfileServiceTest`, `ProfileFormTest` | кожен системний тест заповнює анкету через форму | виконано |
+| Видалення анкети | `UserServiceTest`, `InvitationRepositoryComponentTest` | `deleteAccount` | виконано |
+| US-03 Пошук за ключовими словами | `KeywordTest`, `ProfileServiceTest`, `ProfileRepositoryComponentTest`, `SearchControllerComponentTest` | `mainScenarioFromSearchToPrivateData`, `deleteAccount` | виконано |
+| Сортування й фільтр за віком | `ProfileSearchSortTest`, `SearchCriteriaTest`, `ProfileRepositoryComponentTest` | — (перевірено інтеграційним тестом `searchSorts…`) | виконано |
+| US-04 Запрошення (UC-1) та список запрошень | `InvitationServiceTest`, `InvitationControllerComponentTest`, `InvitationRepositoryComponentTest` | `mainScenarioFromSearchToPrivateData` | виконано |
+| UC-1, 1a: повторне запрошення | `InvitationServiceTest`, `InvitationControllerComponentTest` | — (інтеграційний `secondInvitationIsRefused…`) | виконано |
+| UC-1, 3a: відхилення | `InvitationTest`, `InvitationRepositoryComponentTest` | `rejectedInvitationKeepsDataClosed` | виконано |
+| UC-1, 3b: відкликання | `InvitationServiceTest`, `InvitationRepositoryComponentTest` | — (інтеграційний `senderCanCancel…`) | виконано |
+| US-05 Сумісність за матрицею долі | `ArcanaDestinyMatrixServiceTest` | `mainScenarioFromSearchToPrivateData` | виконано |
+
+### Валідація нефункціональних вимог
+
+| Вимога (ЛР1) | Чим перевірено | Критерій |
+| --- | --- | --- |
+| Сторінки анкети й пошуку до 2 с при 10 000 анкет | `LoadTestRunner` (1 користувач) | 95-й перцентиль ≤ 2 с |
+| 100 одночасних сеансів без помилок | `LoadTestRunner` (100 сеансів) | 0 помилок, 95-й перцентиль ≤ 2 с |
+| Кожна сторінка під час роботи користувача до 2 с | `UsabilityAndPerformanceSystemTest` | найповільніший перехід < 2 с |
+| Матриця долі до 1 с для пари | `NonFunctionalRequirementsTest` | < 1 с для 1 пари і 100 000 пар |
+| Ендпоінт моніторингу | `healthEndpointReportsSystemIsUp` | `{"status":"UP"}` |
+| Атомарність операцій | `TransactionAtomicityIntegrationTest`, `UserServiceTest` (порядок видалення) | збій відкочує всі зміни |
+| Помилки українською без stack trace | `GlobalExceptionHandlerTest`, `errorPagesAreUserFriendly` | у HTML немає назв винятків |
+| BCrypt | `passwordIsStoredOnlyAsBCryptHash`, `UserServiceTest` | у БД лише хеш |
+| Закриті дані не йдуть на клієнт | `ProfileTest`, `ProfileServiceTest`, системні тести перевіряють HTML у браузері | закритих даних немає в коді сторінки |
+| Журналювання дій доступу | `AuditLogTest`, `AuthenticationAuditListenerTest` | у журналі лише ідентифікатори, IP і рішення |
+| HTTPS | ручна перевірка: http://localhost:8080 → https://localhost:8443 | перенаправлення, замочок у браузері |
+| Основні дії до 3 переходів | `UsabilityAndPerformanceSystemTest` | пошук і запрошення — 3, підтвердження — 2 |
+| Сумісність відсотком і коротким текстом | `compatibilityIsShownAsPercentAndShortPlainText`, системний `mainScenario…` | «NN %» і речення без термінології |
+
+Використання пам'яті застосунком після сценарію виводить у консоль `mainPagesOpenWithinTwoSeconds`
+(довідково: окремої вимоги до пам'яті в ЛР1 немає).
+
+### Знайдені дефекти та їх усунення
+
+| № | Дефект | Як знайдено | Вплив | Усунення |
+| --- | --- | --- | --- | --- |
+| 1 | Після злиття PR #6 у `main` зник 21 файл (класи `profile`, шаблони, тести ЛР4), збірка не компілювалася | збірка `main` після злиття | застосунок не запускався | файли відновлено з історії Git, PR #7 |
+| 2 | Email довший за 255 символів проходив перевірку форми і спричиняв помилку сервера (500) під час збереження | компонентний тест граничних значень `tooLongEmailIsRejectedWithMessage` | користувач бачив «Щось пішло не так» замість підказки | обмеження `@Size(max = 254)` у `RegistrationForm` |
+| 3 | Реєстрація приймала будь-яку дату в минулому (наприклад, 1850 рік); така анкета показувала нереальний вік і не знаходилася пошуком (пошук охоплює дати від 1900 року) | компонентні тести `ageAboveMaximumIsRejected`, `unrealisticBirthDateIsRejected` | анкета «зникала» для інших користувачів | перевірка віку не більше 120 років в `AuthController` |
+| 4 | Після збереження анкети не з'являлося повідомлення «Анкету збережено»: застосунок перенаправляв на `/profile`, а звідти ще раз на сторінку анкети, і одноразове повідомлення губилося на проміжному кроці | системний тест `mainScenarioFromSearchToPrivateData` (браузер не побачив повідомлення) | користувач не отримував підтвердження, що анкету збережено | `ProfileController` одразу перенаправляє на `/users/{id}/profile` |
+
+### Рекомендації щодо розвитку
+
+- **Захист від одночасних запрошень.** Перевірка «немає активного запрошення» і збереження нового — дві окремі дії;
+  два одночасні натискання теоретично можуть створити два запрошення. Варто додати унікальний індекс
+  для активної пари користувачів або блокування рядка.
+- **Пошук за схожими словами.** Зараз потрібен точний збіг тегу («кава» ≠ «кавою»); можна додати
+  повнотекстовий пошук PostgreSQL з українською морфологією.
+- **Пагінація результатів пошуку** замість обмеження у 50 анкет.
+- **Завантаження фото на сервер** замість посилань, з перевіркою типу й розміру файлу.
+- **Безперервна інтеграція:** запуск `mvn verify` (тести й покриття) у GitHub Actions для кожного Pull Request —
+  це виявило б дефект № 1 ще до злиття.
+- **Розгортання:** Docker-образ застосунку разом із PostgreSQL для однакового середовища в усіх учасниць.
+
 ## Команда та внесок
 
 | Учасниця | Роль | Внесок |
 | --- | --- | --- |
-| Бідюк Марія | Backend, архітектура, БД, безпека | каркас проєкту; Spring Security, BCrypt, HTTPS; сутності `User`, `Profile`, `Invitation`, `DestinyMatrixResult`; сервіси анкет, запрошень і матриці долі; правила розкриття закритої інформації; ЛР5: індекси та оптимізований пошук із сортуванням і фільтром, налаштування видимості полів, видалення облікового запису, журнал аудиту, безпечна обробка помилок, SQL-скрипти тестових даних, оновлення `pom.xml` |
-| Хмелюк Діана | Frontend, пошук, тестування, документація | сутність `Keyword` і розбір тегів; контролери та Thymeleaf-сторінки; стилі; модульні тести; ЛР5: фільтри пошуку й кнопка запрошення в результатах, перемикачі видимості та видалення анкети на сторінках, інтеграційні тести, тести НФВ, навантажувальний тест, README |
+| Бідюк Марія | Backend, архітектура, БД, безпека | каркас проєкту; Spring Security, BCrypt, HTTPS; сутності `User`, `Profile`, `Invitation`, `DestinyMatrixResult`; сервіси анкет, запрошень і матриці долі; правила розкриття закритої інформації; ЛР5: індекси та оптимізований пошук із сортуванням і фільтром, налаштування видимості полів, видалення облікового запису, журнал аудиту, безпечна обробка помилок, SQL-скрипти тестових даних, оновлення `pom.xml`, відновлення файлів після злиття PR #6; ЛР6: юніт- і компонентні тести, JaCoCo, виправлення дефектів реєстрації |
+| Хмелюк Діана | Frontend, пошук, тестування, документація | сутність `Keyword` і розбір тегів; контролери та Thymeleaf-сторінки; стилі; модульні тести; ЛР5: фільтри пошуку й кнопка запрошення в результатах, перемикачі видимості та видалення анкети на сторінках, інтеграційні тести, тести НФВ, навантажувальний тест, README; ЛР6: системні тести в браузері (Selenium), перевірка НФВ зручності й часу сторінок, валідація вимог і README |
 
 ## Процес роботи з Git
 
@@ -235,6 +323,9 @@ Run → Edit Configurations → Environment variables → `SSL_ENABLED=false`, �
 | `feature/web-ui` | ЛР4 | Хмелюк Діана | Бідюк Марія |
 | `feature/nfr-backend` | ЛР5 | Бідюк Марія | Хмелюк Діана |
 | `feature/ui-tests-docs` | ЛР5 | Хмелюк Діана | Бідюк Марія |
+| `fix/restore-deleted-files` | ЛР5 | Бідюк Марія | Хмелюк Діана |
+| `feature/unit-component-tests` | ЛР6 | Бідюк Марія | Хмелюк Діана |
+| `feature/system-tests` | ЛР6 | Хмелюк Діана | Бідюк Марія |
 
 ## Документація
 
