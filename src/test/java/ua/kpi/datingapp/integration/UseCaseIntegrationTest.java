@@ -336,7 +336,9 @@ class UseCaseIntegrationTest {
         if (photo != null) {
             request.param("openPhotos", photo);
         }
-        mockMvc.perform(request).andExpect(redirectedUrl("/profile"));
+        mockMvc.perform(request)
+                .andExpect(redirectedUrlPattern("/users/*/profile"))
+                .andExpect(flash().attribute("message", "Анкету збережено"));
     }
 
     private void sendInvitation(String senderEmail, Long receiverId) throws Exception {

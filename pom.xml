@@ -83,6 +83,27 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            Системні тести (ЛР6): Selenium WebDriver керує браузером так, як це робить користувач.
+            HtmlUnitDriver — браузер без вікна, нічого встановлювати не потрібно.
+            З -Dbrowser=chrome ті самі тести виконуються у справжньому Chrome (selenium-chrome-driver).
+            Версії задає spring-boot-starter-parent.
+        -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>htmlunit3-driver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-chrome-driver</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -58,7 +58,8 @@ public class ProfileController {
         Long userId = userService.getIdByEmail(principal.getName());
         profileService.saveOwnProfile(userId, form.toData());
         redirectAttributes.addFlashAttribute("message", "Анкету збережено");
-        return "redirect:/profile";
+        // Одразу на сторінку анкети: через проміжне перенаправлення /profile повідомлення губилося (ЛР6)
+        return "redirect:/users/" + userId + "/profile";
     }
 
     /**
